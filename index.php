@@ -4,7 +4,7 @@
 This Project is based on https://tanzil.net/ 
 Tanzil.net provide all Quran Pak in sql format
 ______________________________________________
-You are allowed to use this Quran Pak Urdu with Urdu Translation api project anywhere.
+You are allowed to use this Quran Pak with Urdu Translation api project anywhere.
 You can create application website or anything you want feel free to use this project without 
 any credit and no worries of copyright. Jazakallah
 
