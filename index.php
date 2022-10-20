@@ -28,21 +28,166 @@ function main()
 
     switch ($type) {
 
-        case 'aya':
+        case 'get_aya':
             return getAyaFromQuran();
+           /*
+           PARAMETERS:
+            aya_no --- Which Aya you want...
+           */
             break;
 
-        case 'page':
+        case 'get_page':
             return getperPage();
+             /*
+           PARAMETERS:
+            page_no --- Which Page you want...
+            Each page contains 10 ayas.. You can customize it in code
+           */
             break;
 
-        case 'random':
+        case 'get_random':
             return getRandomAya();
+             /*
+           PARAMETERS:
+           No Params Requires
+           */
             break;
-        case 'sura':
+        case 'get_sura':
             return getSura();
+             /*
+           PARAMETERS:
+            sura_no --- Which Sura you want...
+           */
+            break;
+        case 'get_sura_meta':
+            return getAllSurahMeta();
+             /*
+           PARAMETERS:
+           No Params Requires
+           */
+            break;
+        case 'get_aya_from_sura':
+            return getAyaFromSura();
+             /*
+           PARAMETERS:
+          sura_no -- In Which SURA you want to get aya
+          aya_no --  From specific sura whcih aya you want
+           */
             break;
     }
+}
+
+
+function getAllSurahMeta()
+{
+
+
+    global $conn;
+
+
+    $query = "SELECT * FROM `suras_meta`";
+    $result = mysqli_query($conn, $query);
+    $arrSurahs = array();
+    if (mysqli_num_rows($result) >= 1) {
+        while ($value = mysqli_fetch_assoc($result)) {
+
+            $arr = array(
+                "id" => $value['id'], "sindex" => $value["sindex"], "ayas" => $value["ayas"], "start" => $value["start"], "name" => $value["name"],
+                "tname" => $value['tname'], "ename" => $value['ename'], "type" => $value['type'], "sorder" => $value['sorder'], "rukus" => $value['rukus']
+            );
+
+            array_push($arrSurahs, $arr);
+        }
+    }
+
+    $final = array("status" => "Success", "message" => "Suras Meta Found", "Surah" => $arrSurahs);
+
+    return $final;
+}
+
+function getAyaFromSura()
+{
+
+    // SELECT * FROM `quran_text` WHERE `sura` = 2 AND `aya` = 10
+    $artext = '';
+    $arindex = '';
+    $arsura = '';
+    $araya = '';
+
+    $urtext = '';
+    $urindex = '';
+    $ursura = '';
+    $uraya = '';
+
+
+    global $conn;
+
+
+    if (!isset($_GET['sura_no'])) {
+        $final = array("status" => "failed", "message" => "Please specifiy the Surah no", "aya" => null);
+
+        return $final;
+    }
+
+    if (!isset($_GET['aya_no'])) {
+        $final = array("status" => "failed", "message" => "Please specifiy the Aya no", "aya" => null);
+
+        return $final;
+    }
+
+
+
+
+    $surahnumber = $_GET['sura_no'];
+
+    $ayanumber = $_GET['aya_no'];
+
+
+    $query = "SELECT * FROM `quran_text` WHERE `sura` = " . $surahnumber . " AND `aya` = " . $ayanumber;
+    $result = mysqli_query($conn, $query);
+    $arabic = array();
+    $urdu = array();
+    if (mysqli_num_rows($result) >= 1) {
+        while ($value = mysqli_fetch_assoc($result)) {
+
+
+            $arindex =   $value['index'];
+            $arsura =   $value['sura'];
+            $araya =   $value['aya'];
+            $artext =   $value['text'];
+
+            $arr = array("index" => $arindex, "sura" => $arsura, "aya" => $araya, "text" => $artext);
+            array_push($arabic, $arr);
+        }
+    } else {
+        $final = array("status" => "failed", "message" => "aya not found", "aya" => null);
+
+        return $final;
+    }
+
+    $query = "SELECT * FROM `ur_qadri` WHERE `sura` = " . $surahnumber . " AND `aya` = " . $ayanumber;
+
+
+    $result = mysqli_query($conn, $query);
+
+    if (mysqli_num_rows($result) >= 1) {
+        while ($value = mysqli_fetch_assoc($result)) {
+
+
+            $urindex =   $value['index'];
+            $ursura =   $value['sura'];
+            $uraya =   $value['aya'];
+            $urtext =   $value['text'];
+
+            $arr = array("index" => $urindex, "sura" => $ursura, "aya" => $uraya, "text" => $urtext);
+            array_push($urdu, $arr);
+        }
+    }
+
+
+    $final = array("status" => "Success", "message" => "aya found", "aya" => array("arabic" => $arabic, "urdu" => $urdu));
+
+    return $final;
 }
 
 
@@ -60,12 +205,12 @@ function getAyaFromQuran()
 
 
     global $conn;
-    if (!isset($_GET['aya'])) {
+    if (!isset($_GET['aya_no'])) {
         $final = array("status" => "failed", "message" => "Please specifiy the aya no", "aya" => null);
 
         return $final;
     }
-    $aya = $_GET['aya'];
+    $aya = $_GET['aya_no'];
 
 
 
@@ -126,12 +271,12 @@ function getperPage()
     $urindex = '';
     $ursura = '';
     $uraya = '';
-    if (!isset($_GET['page'])) {
+    if (!isset($_GET['page_no'])) {
         $final = array("status" => "failed", "message" => "Please specifiy the page no", "page_content" => null);
 
         return $final;
     }
-    $page = $_GET['page'] * 10;
+    $page = $_GET['page_no'] * 10;
     $lowPage = $page - 10;
 
 
@@ -225,7 +370,7 @@ function getRandomAya()
             $araya =   $value['aya'];
             $artext =   $value['text'];
 
-            $arr = array($arindex => array("index" => $arindex, "sura" => $arsura, "aya" => $araya, "text" => $artext));
+            $arr = array("index" => $arindex, "sura" => $arsura, "aya" => $araya, "text" => $artext);
             array_push($arabic, $arr);
         }
     } else {
@@ -253,7 +398,7 @@ function getRandomAya()
             $uraya =   $value['aya'];
             $urtext =   $value['text'];
 
-            $arr = array($urindex => array("index" => $urindex, "sura" => $ursura, "aya" => $uraya, "text" => $urtext));
+            $arr = array("index" => $urindex, "sura" => $ursura, "aya" => $uraya, "text" => $urtext);
             array_push($urdu, $arr);
         }
     }
@@ -278,12 +423,12 @@ function getSura()
     $ursura = '';
     $uraya = '';
 
-    if (!isset($_GET['sura'])) {
+    if (!isset($_GET['sura_no'])) {
         $final = array("status" => "failed", "message" => "Please specifiy the sura no", "sura" => null);
 
         return $final;
     }
-    $sura = $_GET['sura'];
+    $sura = $_GET['sura_no'];
 
     $arabic = array();
     $urdu = array();
