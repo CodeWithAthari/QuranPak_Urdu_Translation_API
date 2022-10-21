@@ -11,12 +11,33 @@ any credit and no worries of copyright. Jazakallah
 
 */
 
-
 require "con.php";
+$versions =array("ur_qadri","ur_maududi");
 echo json_encode(main());
 
 function main()
 {
+
+    if (!isset($_GET['v'])) {
+        $final = array("status" => "failed", "message" => "Please specifiy the Version", "data" => null);
+
+        return $final;
+    }
+global $versions;
+
+if(!isset($_GET['errors']) ||!$_GET['errors'] == false ){
+    if(!in_array($_GET['v'],$versions)){
+        $final = array("status" => "failed", "message" => "Unknown Version set error to true for any version or Specify the version e.g ur_maududi", "data" => null);
+
+        return $final;
+    }
+
+}
+else{
+    $_GET['v'] = $versions[1];
+}
+
+  
 
     if (!isset($_GET['q'])) {
         $final = array("status" => "failed", "message" => "Please specifiy the Query", "data" => null);
@@ -30,7 +51,7 @@ function main()
 
         case 'get_aya':
             return getAyaFromQuran();
-           /*
+            /*
            PARAMETERS:
             aya_no --- Which Aya you want...
            */
@@ -38,7 +59,7 @@ function main()
 
         case 'get_page':
             return getperPage();
-             /*
+            /*
            PARAMETERS:
             page_no --- Which Page you want...
             Each page contains 10 ayas.. You can customize it in code
@@ -47,28 +68,35 @@ function main()
 
         case 'get_random':
             return getRandomAya();
-             /*
+            /*
            PARAMETERS:
            No Params Requires
            */
             break;
         case 'get_sura':
             return getSura();
-             /*
+            /*
            PARAMETERS:
             sura_no --- Which Sura you want...
            */
             break;
         case 'get_sura_meta':
             return getAllSurahMeta();
-             /*
+            /*
            PARAMETERS:
            No Params Requires
            */
             break;
+        case 'get_sura_meta_one':
+            return getAllSurahMetaOne();
+            /*
+               PARAMETERS:
+               No Params Requires
+               */
+            break;
         case 'get_aya_from_sura':
             return getAyaFromSura();
-             /*
+            /*
            PARAMETERS:
           sura_no -- In Which SURA you want to get aya
           aya_no --  From specific sura whcih aya you want
@@ -77,6 +105,44 @@ function main()
     }
 }
 
+function getAllSurahMetaOne()
+{
+
+
+    global $conn;
+
+
+
+    if (!isset($_GET['sura_no'])) {
+        $final = array("status" => "failed", "message" => "Please specifiy the Sura no", "sura" => null);
+
+        return $final;
+    }
+    $surano = $_GET['sura_no'];
+
+    $query = "SELECT * FROM `suras_meta` WHERE `id` = " . $surano;
+    $result = mysqli_query($conn, $query);
+    $arrSurahs = array();
+    if (mysqli_num_rows($result) >= 1) {
+        while ($value = mysqli_fetch_assoc($result)) {
+
+            $arr = array(
+                "id" => $value['id'], "sindex" => $value["sindex"], "ayas" => $value["ayas"], "start" => $value["start"], "name" => $value["name"],
+                "tname" => $value['tname'], "ename" => $value['ename'], "type" => $value['type'], "sorder" => $value['sorder'], "rukus" => $value['rukus']
+            );
+
+            array_push($arrSurahs, $arr);
+        }
+    } else {
+        $final = array("status" => "failed", "message" => "Unknown Sura No", "sura" => null);
+
+        return $final;
+    }
+
+    $final = array("status" => "Success", "message" => "Suras Meta Found", "Sura" => $arrSurahs);
+
+    return $final;
+}
 
 function getAllSurahMeta()
 {
@@ -100,7 +166,7 @@ function getAllSurahMeta()
         }
     }
 
-    $final = array("status" => "Success", "message" => "Suras Meta Found", "Surah" => $arrSurahs);
+    $final = array("status" => "Success", "message" => "Suras Meta Found", "Sura" => $arrSurahs);
 
     return $final;
 }
@@ -119,6 +185,8 @@ function getAyaFromSura()
     $ursura = '';
     $uraya = '';
 
+
+    $v = $_GET['v'];
 
     global $conn;
 
@@ -165,7 +233,7 @@ function getAyaFromSura()
         return $final;
     }
 
-    $query = "SELECT * FROM `ur_qadri` WHERE `sura` = " . $surahnumber . " AND `aya` = " . $ayanumber;
+    $query = "SELECT * FROM `$v` WHERE `sura` = " . $surahnumber . " AND `aya` = " . $ayanumber;
 
 
     $result = mysqli_query($conn, $query);
@@ -185,7 +253,7 @@ function getAyaFromSura()
     }
 
 
-    $final = array("status" => "Success", "message" => "aya found", "aya" => array("arabic" => $arabic, "urdu" => $urdu));
+    $final = array("status" => "Success","version"=>$v, "message" => "aya found", "aya" => array("arabic" => $arabic, "urdu" => $urdu));
 
     return $final;
 }
@@ -203,7 +271,7 @@ function getAyaFromQuran()
     $ursura = '';
     $uraya = '';
 
-
+    $v = $_GET['v'];
     global $conn;
     if (!isset($_GET['aya_no'])) {
         $final = array("status" => "failed", "message" => "Please specifiy the aya no", "aya" => null);
@@ -236,7 +304,7 @@ function getAyaFromQuran()
         return $final;
     }
 
-    $query = "SELECT * FROM `ur_qadri` WHERE `index` = " . $aya;
+    $query = "SELECT * FROM `$v` WHERE `index` = " . $aya;
     $result = mysqli_query($conn, $query);
 
     if (mysqli_num_rows($result) >= 1) {
@@ -254,7 +322,7 @@ function getAyaFromQuran()
     }
 
 
-    $final = array("status" => "Success", "message" => "aya found", "aya" => array("arabic" => $arabic, "urdu" => $urdu));
+    $final = array("status" => "Success","version"=>$v, "message" => "aya found", "aya" => array("arabic" => $arabic, "urdu" => $urdu));
 
     return $final;
 }
@@ -271,6 +339,7 @@ function getperPage()
     $urindex = '';
     $ursura = '';
     $uraya = '';
+    $v = $_GET['v'];
     if (!isset($_GET['page_no'])) {
         $final = array("status" => "failed", "message" => "Please specifiy the page no", "page_content" => null);
 
@@ -315,7 +384,7 @@ function getperPage()
 
 
 
-    $query = "SELECT * FROM `ur_qadri`WHERE `index` BETWEEN $lowPage and $page";
+    $query = "SELECT * FROM `$v`WHERE `index` BETWEEN $lowPage and $page";
 
     $result = mysqli_query($conn, $query);
     $urdu = array();
@@ -334,7 +403,7 @@ function getperPage()
         }
     }
 
-    $final = array("status" => "Success", "message" => "page found", "page_content" => array("arabic" => $arabic, "urdu" => $urdu));
+    $final = array("status" => "Success","version"=>$v, "message" => "page found", "page_content" => array("arabic" => $arabic, "urdu" => $urdu));
 
     return $final;
 }
@@ -350,7 +419,7 @@ function getRandomAya()
     $urindex = '';
     $ursura = '';
     $uraya = '';
-
+    $v = $_GET['v'];
     $random = mt_rand(1, 6236);
 
     global $conn;
@@ -384,7 +453,8 @@ function getRandomAya()
 
 
 
-    $query = "SELECT * FROM `ur_qadri`WHERE `index` = " . $random;
+    $query = "SELECT * FROM `$v` WHERE `index` = " . $random;
+    // echo $query;
 
     $result = mysqli_query($conn, $query);
     $urdu = array();
@@ -403,7 +473,7 @@ function getRandomAya()
         }
     }
 
-    $final = array("status" => "Success", "message" => "aya found", "aya" => array("arabic" => $arabic, "urdu" => $urdu));
+    $final = array("status" => "Success","version"=>$v, "message" => "aya found", "aya" => array("arabic" => $arabic, "urdu" => $urdu));
 
     return $final;
 }
@@ -422,7 +492,7 @@ function getSura()
     $urindex = '';
     $ursura = '';
     $uraya = '';
-
+    $v = $_GET['v'];
     if (!isset($_GET['sura_no'])) {
         $final = array("status" => "failed", "message" => "Please specifiy the sura no", "sura" => null);
 
@@ -444,7 +514,7 @@ function getSura()
             $araya =   $value['aya'];
             $artext =   $value['text'];
 
-            $arr = array($arindex => array("index" => $arindex, "sura" => $arsura, "aya" => $araya, "text" => $artext));
+            $arr = array("index" => $arindex, "sura" => $arsura, "aya" => $araya, "text" => $artext);
             array_push($arabic, $arr);
         }
     } else {
@@ -453,7 +523,7 @@ function getSura()
         return $final;
     }
 
-    $query = "SELECT * FROM `ur_qadri` WHERE `sura` = " . $sura;
+    $query = "SELECT * FROM `$v` WHERE `sura` = " . $sura;
     $result = mysqli_query($conn, $query);
     if (mysqli_num_rows($result) >= 1) {
         while ($value = mysqli_fetch_assoc($result)) {
@@ -463,12 +533,12 @@ function getSura()
             $uraya =   $value['aya'];
             $urtext =   $value['text'];
 
-            $arr = array($urindex => array("index" => $urindex, "sura" => $ursura, "aya" => $uraya, "text" => $urtext));
+            $arr = array("index" => $urindex, "sura" => $ursura, "aya" => $uraya, "text" => $urtext);
             array_push($urdu, $arr);
         }
     }
 
-    $final = array("status" => "Success", "message" => "sura found", "sura" => array("arabic" => $arabic, "urdu" => $urdu));
+    $final = array("status" => "Success","version"=>$v, "message" => "sura found", "sura" => array("arabic" => $arabic, "urdu" => $urdu));
 
     return $final;
 }
